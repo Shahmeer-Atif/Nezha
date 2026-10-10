@@ -234,6 +234,9 @@ def get_events_within_trace(trace_reader, log_reader, trace_id, alarm_list, ns,l
     trace = Trace("StartTraceId is %s" % trace_id)
     # logger.info(trace_id)
     log_span_id_list = log_reader.index.tolist()
+    if DROP_LOGS:
+        # logs enter the pipeline only through this lookup, so emptying it drops the log modality
+        log_span_id_list = []
     try:
         # find all span within a trace
         spans = trace_reader.loc[[trace_id], ['SpanID', 'ParentID',

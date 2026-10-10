@@ -1,0 +1,15 @@
+BATCH START 2026-10-10T12:39:21Z
+
+=== OnlineBoutique_inner  (--ns hipster --level inner)  start 12:39:21Z ===
+    exit=0  duration=39m6s
+Fault numbuer : 56 92.857143 % 96.428571 % 96.428571 % 
+
+=== TrainTicket_service  (--ns ts --level service)  start 13:18:27Z ===
+    exit=0  duration=24m17s
+Fault numbuer : 45 86.666667 % 97.777778 % 97.777778 % 
+
+=== TrainTicket_inner  (--ns ts --level inner)  start 13:42:44Z ===
+    exit=0  duration=11m9s
+Fault numbuer : 45 86.666667 % 97.777778 % 97.777778 % 
+
+BATCH DONE 2026-10-10T13:53:53Z  total=74 min

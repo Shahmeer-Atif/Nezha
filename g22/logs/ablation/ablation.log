@@ -1,0 +1,8 @@
+ABLATION START 2026-10-10T13:54:11Z
+=== AB_k3_hipster_service start 13:54:11Z ===
+    exit=0 duration=34m27s peakRSS=1332 MB  @1/@3/@5: 91.071429 % 94.642857 % 94.642857 % 
+=== A_k3_hipster_service start 14:28:38Z ===
+    exit=0 duration=34m47s peakRSS=1297 MB  @1/@3/@5: 92.857143 % 96.428571 % 96.428571 % 
+=== B_k3_hipster_service start 15:03:25Z ===
+    exit=0 duration=32m46s peakRSS=1348 MB  @1/@3/@5: 91.071429 % 94.642857 % 94.642857 % 
+=== baseline_k3_hipster_service start 15:36:11Z ===

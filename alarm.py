@@ -20,6 +20,44 @@ logger = Logger(log_path, logging.DEBUG, __name__).getlog()
 
 metric_threshold_dir = "metric_threshold"
 
+# ---------------------------------------------------------------------------
+# G22 modification. Alarm-generation mode, selected by environment variable.
+#   NEZHA_ALARM_MODE = baseline  original behaviour (default, unchanged)
+#                      A         keep every alarming metric per pod
+#                      B         per-service CPU/memory thresholds (mean + k*std)
+#                      AB        both A and B
+#   NEZHA_K          = k for Component B (default 3)
+# ---------------------------------------------------------------------------
+ALARM_MODE = os.environ.get("NEZHA_ALARM_MODE", "baseline").strip()
+if ALARM_MODE not in ("baseline", "A", "B", "AB"):
+    raise ValueError("NEZHA_ALARM_MODE must be one of baseline, A, B, AB")
+COMPONENT_A = ALARM_MODE in ("A", "AB")
+COMPONENT_B = ALARM_MODE in ("B", "AB")
+K_SIGMA = float(os.environ.get("NEZHA_K", "3"))
+# G22 reimplementation of the paper's modality ablation (RQ3), not shipped in the released code.
+#   NEZHA_MODALITY = all (default) | noM (drop metrics) | noL (drop logs) | noML (drop both)
+MODALITY = os.environ.get("NEZHA_MODALITY", "all").strip()
+if MODALITY not in ("all", "noM", "noL", "noML"):
+    raise ValueError("NEZHA_MODALITY must be one of all, noM, noL, noML")
+DROP_METRICS = MODALITY in ("noM", "noML")
+DROP_LOGS = MODALITY in ("noL", "noML")
+_threshold_cache = {}
+
+
+def _service_baseline(pod, metric_type):
+    """Return (mean, std) for a pod's service from metric_threshold/<svc>.csv, or None."""
+    svc = get_svc(pod)
+    if svc not in _threshold_cache:
+        path = os.path.join(dirname(__file__), metric_threshold_dir, svc + ".csv")
+        _threshold_cache[svc] = pd.read_csv(path) if os.path.exists(path) else None
+    table = _threshold_cache[svc]
+    if table is None or metric_type not in table.columns or len(table) < 2:
+        return None
+    mean, std = float(table[metric_type].iloc[0]), float(table[metric_type].iloc[1])
+    if not np.isfinite(mean) or not np.isfinite(std) or std <= 0:
+        return None
+    return mean, std
+
 
 def get_svc(path):
     svc = path.rsplit('-', 1)[0]
@@ -164,6 +202,12 @@ def determine_alarm(pod, metric_type, metric_value, std_num, ns):
     path_list = os.listdir(metric_threshold_dir)
 
     if metric_type == "CpuUsageRate(%)" or metric_type == 'MemoryUsageRate(%)':
+        if COMPONENT_B:
+            baseline = _service_baseline(pod, metric_type)
+            if baseline is not None:
+                mean, std = baseline
+                return metric_value > mean + K_SIGMA * std
+            # no usable per-service baseline: fall back to the original fixed threshold
         if metric_value > 80:
             return True
     else:
@@ -208,6 +252,9 @@ def generate_alarm(metric_list, ns, std_num=6):
         }]
     """
     alarm_list = []
+    if DROP_METRICS:
+        # metrics enter the pipeline only through alarms, so dropping alarms drops the metric modality
+        return alarm_list
     for pod_metric in metric_list:
         alarm = {}
         for i in range(len(pod_metric['metrics'])):
@@ -217,6 +264,11 @@ def generate_alarm(metric_list, ns, std_num=6):
                 # if exist alarm_flag equal to true, create map
                 if "pod" not in alarm:
                     alarm = {"pod": pod_metric["pod"], "alarm": []}
+                    alarm['alarm'].append(
+                        {"metric_type": pod_metric['metrics'][i]["metric_type"], "alarm_flag": alarm_flag})
+                elif COMPONENT_A:
+                    # original code records only the first alarming metric per pod;
+                    # Component A records every alarming metric
                     alarm['alarm'].append(
                         {"metric_type": pod_metric['metrics'][i]["metric_type"], "alarm_flag": alarm_flag})
 
