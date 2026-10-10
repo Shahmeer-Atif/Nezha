@@ -92,3 +92,4 @@ designed does not raise accuracy.**
 | `logs/reproduction/` | Our run logs for all four configurations |
 | `logs/ablation/` | Run logs and `/usr/bin/time -l` output for each ablation variant |
 | `logs/modality/` | Modality ablation run logs |
+| `provenance/` | Exact code used for the A/B runs, upstream commit, Drain3 hashes and full resolved environment |
