@@ -106,6 +106,51 @@ held-out evaluation for C.
 - Runtime is not compared: two runs execute in parallel, so wall times are not controlled.
 - Logs, per-case tables and analysis scripts are committed to `g22/logs/` and `g22/scripts/`.
 
+## Amendment 1 (2026-11-18 PKT, committed before any round-2 run)
+
+Added after an outside review of the Day-80 draft. No run, definition, hypothesis or analysis in
+Sections 1 to 6 is changed, and Component C is unchanged. Every item below is computed from the
+same 22 run logs and the alarm lists already produced by `alarm_equivalence.py`; no run is added.
+
+Additional analyses:
+
+- **A1. Service-only accuracy.** Top-k computed from the pod position (Section 2): a fault counts at
+  k if the first candidate on the injected pod is at list position k or better, ignoring resource and
+  log template. Reported per run for k = 1, 3, 5 next to the original, strict and ordinal values.
+  A fault whose injected pod is absent from the candidate list counts as not localized.
+- **A2. Per-fault-type table.** For each variant against the baseline of the same system and each
+  injected fault type: total cases, baseline matches at rank 1, variant matches at rank 1,
+  recoveries (wrong to right) and regressions (right to wrong), using the original rank.
+- **A3. Attribution bound.** For each alarm mode (baseline, A, B and AB at k = 3) and each resource
+  fault: whether the alarm list of the injected pod in the analysed minute contains the resource
+  type named in `construct_data/root_cause_<ns>.json`. The count is an upper bound on the resource
+  faults that any rule choosing among the pod's own alarms could match, whatever the ranking.
+  Descriptive only; no hypothesis.
+
+Clarifications of wording in Section 4 (fixed here, before data):
+
+- Analysis 4, error split: the error set is every resource fault with no match at list position 1.
+  Localization error = pod position > 1; attribution error = pod position 1 and no match at
+  position 1. A fault whose injected pod is absent from the list is reported in its own row.
+- Analysis 3: top-1 correctness uses the original rank. p-values are reported without a
+  multiple-comparison correction, together with the number of tests.
+- Q0: the stop condition stays as written (runs 1 and 2 against the round-1 service-level logs).
+  Runs 21 and 22 are also compared per case with the round-1 inner-level logs, and runs 18 to 20
+  with the round-1 A, B and A+B logs. These comparisons are reported as additional checks.
+
+Checks outside the 22 runs (no effect on any run):
+
+- Unit tests of the released rank rule and of the strict, ordinal and pod-position values on small
+  synthetic candidate lists (right pod with wrong resource; non-matching candidate with a resource;
+  candidate without a resource; tied scores).
+- Recomputation of the shipped `metric_threshold/*.csv` statistics from `construct_data/` with the
+  released `generate_threshold` logic, to report whether the shipped means and standard deviations
+  can be reproduced from the shipped fault-free data.
+
+A pre-flight run of one baseline configuration (TrainTicket, inner-service level, all switches off)
+was made in a scratch directory on 2026-11-18 before this commit, only to confirm that the worker
+layout runs and that audit lines are written. It is not one of the 22 runs and is not reported as a result.
+
 ## Deviations
 
 None yet.
