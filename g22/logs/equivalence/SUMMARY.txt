@@ -1,0 +1,8 @@
+Alarm-list equivalence, 2026-11-17 (g22/scripts/alarm_equivalence.py)
+Current alarm.py versus g22/provenance/alarm_as_tested_for_AB_runs.py, on all 105 analysed minutes
+(101 fault windows + 4 fault-free construction windows), ordered alarm list per pod.
+baseline k=3: IDENTICAL (118 alarming pods, 118 alarms)
+A        k=3: IDENTICAL (118 alarming pods, 123 alarms)
+B        k=3: IDENTICAL (184 alarming pods, 184 alarms)
+AB       k=3: IDENTICAL (184 alarming pods, 197 alarms)
+B at k = 1, 2, 4, 5 is checked at the start of g22/scripts/run_round2.sh (results in g22/logs/round2/equivalence/).

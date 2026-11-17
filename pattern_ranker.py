@@ -151,7 +151,7 @@ def pattern_ranker(normal_pattern_dict, normal_event_graphs, abnormal_time, ns, 
                 item = alarm_list[i]
                 if item["pod"] == pod:
                     result_list.append({"events": key, "score": value,
-                                        "deepth": deepth, "pod": pod, "resource": item["alarm"][0]["metric_type"]})
+                                        "deepth": deepth, "pod": pod, "resource": attributed_resource(item["alarm"])})
                     alarm_flag = True
                     break
         if alarm_flag == False:
@@ -167,7 +167,7 @@ def pattern_ranker(normal_pattern_dict, normal_event_graphs, abnormal_time, ns, 
             for i in range(len(result_list)):
                 item1 = result_list[i]
                 if "resource" in item1.keys():
-                    if item1["pod"] == item["pod"] and item1["resource"] == item["alarm"][0]["metric_type"]:
+                    if item1["pod"] == item["pod"] and item1["resource"] == attributed_resource(item["alarm"]):
                         if max_deep > item1["deepth"]:
                             move_list.add(i)
                         elif max_deep == item1["deepth"] and mv_flag == True:
@@ -195,6 +195,42 @@ def pattern_ranker(normal_pattern_dict, normal_event_graphs, abnormal_time, ns, 
     #     logger.info("%s %s %s %s %s" % (key, from_id_to_template(int(key.split("_")[0])), from_id_to_template(
     #         int(key.split("_")[1])), value["score"], value["deepth"]))
     return result_list, abnormal_pattern_score
+
+
+def g22_audit(result_list, fault, root_cause, log_template_miner):
+    """G22 evaluator audit (pre-registered in g22/PREREGISTRATION.md). Logging only; the original
+    rank computed above is untouched.
+      strict  : the released rank rule with one change: a non-matching candidate that carries a
+                resource advances the rank counter like any other non-matching candidate
+      ordinal : 1-based position of the first matching candidate in the sorted result list
+      podpos  : 1-based position of the first candidate on the injected pod (resource/template ignored)
+    """
+    def is_match(c):
+        if len(root_cause) == 1:
+            return "resource" in c.keys() and str(root_cause[0]) in str(c["resource"]) and str(fault["inject_pod"]) in str(c["pod"])
+        if len(root_cause) == 2:
+            ev = c["events"].split("_")
+            return root_cause[0] in from_id_to_template(int(ev[0]), log_template_miner) and \
+                root_cause[1] in from_id_to_template(int(ev[1]), log_template_miner) and \
+                str(fault["inject_pod"]) in str(c["pod"])
+        return False
+    strict, ordinal, topk = None, None, 1
+    for i in range(len(result_list)):
+        if is_match(result_list[i]):
+            strict, ordinal = topk, i + 1
+            break
+        if i > 0 and result_list[i-1]["score"] == result_list[i]["score"] and result_list[i-1]["deepth"] == result_list[i]["deepth"]:
+            continue
+        topk = topk + 1
+    podpos = None
+    for i in range(len(result_list)):
+        if str(fault["inject_pod"]) in str(result_list[i]["pod"]):
+            podpos = i + 1
+            break
+    top = result_list[0] if len(result_list) > 0 else {}
+    logger.info("G22-AUDIT %s | %s | %s | strict=%s ordinal=%s podpos=%s n=%d top_pod=%s top_resource=%s",
+                fault["inject_time"], fault["inject_pod"], fault["inject_type"], strict, ordinal, podpos,
+                len(result_list), top.get("pod"), top.get("resource"))
 
 
 def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner):
@@ -298,6 +334,7 @@ def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner):
                                 topk = topk + 1
                 else:
                     logger.info("%s", root_cause)
+                g22_audit(result_list, fault, root_cause, log_template_miner)
                 
                 result_len = len(result_list)
                 if result_len > 10:
@@ -587,6 +624,7 @@ def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner):
                                 topk = topk + 1
                 else:
                     logger.info("%s", root_cause)
+                g22_audit(result_list, fault, root_cause, log_template_miner)
 
                 result_len = len(result_list)
                 if result_len > 10:

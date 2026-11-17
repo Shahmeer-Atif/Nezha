@@ -41,7 +41,30 @@ if MODALITY not in ("all", "noM", "noL", "noML"):
     raise ValueError("NEZHA_MODALITY must be one of all, noM, noL, noML")
 DROP_METRICS = MODALITY in ("noM", "noML")
 DROP_LOGS = MODALITY in ("noL", "noML")
+# G22 Component C (resource attribution), pre-registered in g22/PREREGISTRATION.md.
+#   NEZHA_ATTRIBUTION = first (default, original: resource of a candidate = pod's first alarm)
+#                       ratio (resource = the pod's alarm with the largest value/threshold ratio;
+#                              ties keep the original CPU, memory, network order)
+# C only changes which resource is attached to a ranked candidate (pattern_ranker.py).
+# Alarm events, event graphs and pattern scores are unchanged. C has an effect only when a pod
+# carries more than one alarm, i.e. together with Component A.
+ATTRIBUTION = os.environ.get("NEZHA_ATTRIBUTION", "first").strip()
+if ATTRIBUTION not in ("first", "ratio"):
+    raise ValueError("NEZHA_ATTRIBUTION must be one of first, ratio")
 _threshold_cache = {}
+
+
+def attributed_resource(alarms):
+    """Metric type attached to a candidate whose pod carries the alarms in `alarms`."""
+    if ATTRIBUTION == "first" or len(alarms) == 1:
+        return alarms[0]["metric_type"]
+    best, best_ratio = alarms[0], None
+    for a in alarms:
+        thr, val = a.get("threshold"), a.get("value")
+        ratio = float(val) / float(thr) if thr is not None and val is not None and float(thr) > 0 else float("-inf")
+        if best_ratio is None or ratio > best_ratio:  # strict: ties keep the earlier alarm
+            best, best_ratio = a, ratio
+    return best["metric_type"]
 
 
 def _service_baseline(pod, metric_type):
@@ -186,6 +209,23 @@ def get_netwrok_metric(trace_file, pod_name):
         return 10, 10
 
 
+def active_threshold(pod, metric_type, ns):
+    """Threshold applied to (pod, metric_type); None means the metric never alarms."""
+    if metric_type == "CpuUsageRate(%)" or metric_type == 'MemoryUsageRate(%)':
+        if COMPONENT_B:
+            baseline = _service_baseline(pod, metric_type)
+            if baseline is not None:
+                mean, std = baseline
+                return mean + K_SIGMA * std
+            # no usable per-service baseline: fall back to the original fixed threshold
+        return 80
+    if ns == "hipster":
+        return 200
+    if ns == "ts":
+        return 300
+    return None
+
+
 def determine_alarm(pod, metric_type, metric_value, std_num, ns):
     """
     fun determine_alarm: determin whether violate 3-sgima
@@ -201,25 +241,12 @@ def determine_alarm(pod, metric_type, metric_value, std_num, ns):
 
     path_list = os.listdir(metric_threshold_dir)
 
-    if metric_type == "CpuUsageRate(%)" or metric_type == 'MemoryUsageRate(%)':
-        if COMPONENT_B:
-            baseline = _service_baseline(pod, metric_type)
-            if baseline is not None:
-                mean, std = baseline
-                return metric_value > mean + K_SIGMA * std
-            # no usable per-service baseline: fall back to the original fixed threshold
-        if metric_value > 80:
-            return True
-    else:
-
-        if ns == "hipster":
-            # for hipster
-            if metric_value > 200:
-                return True
-        elif ns == "ts":
-            # for ts
-            if metric_value > 300:
-                return True
+    # G22: the decision now goes through active_threshold(), which returns exactly the
+    # thresholds the original code compared against (80 / 200 / 300, or mean + k*std under B),
+    # so that Component C can record the threshold that was applied.
+    threshold = active_threshold(pod, metric_type, ns)
+    if threshold is not None and metric_value > threshold:
+        return True
     return False
     # for path in path_list:
     #     if re.search(path.split('.')[0], pod):
@@ -261,16 +288,19 @@ def generate_alarm(metric_list, ns, std_num=6):
             alarm_flag = determine_alarm(pod=pod_metric["pod"], metric_type=pod_metric['metrics'][i]["metric_type"],
                                          metric_value=pod_metric['metrics'][i]["metric_value"], std_num=std_num, ns=ns)
             if alarm_flag:
+                # G22: value and threshold are recorded for Component C; other consumers
+                # (data_integrate.py, pattern_ranker.py) read only "metric_type".
+                entry = {"metric_type": pod_metric['metrics'][i]["metric_type"], "alarm_flag": alarm_flag,
+                         "value": pod_metric['metrics'][i]["metric_value"],
+                         "threshold": active_threshold(pod_metric["pod"], pod_metric['metrics'][i]["metric_type"], ns)}
                 # if exist alarm_flag equal to true, create map
                 if "pod" not in alarm:
                     alarm = {"pod": pod_metric["pod"], "alarm": []}
-                    alarm['alarm'].append(
-                        {"metric_type": pod_metric['metrics'][i]["metric_type"], "alarm_flag": alarm_flag})
+                    alarm['alarm'].append(entry)
                 elif COMPONENT_A:
                     # original code records only the first alarming metric per pod;
                     # Component A records every alarming metric
-                    alarm['alarm'].append(
-                        {"metric_type": pod_metric['metrics'][i]["metric_type"], "alarm_flag": alarm_flag})
+                    alarm['alarm'].append(entry)
 
         if "pod" in alarm:
             alarm_list.append(alarm)
