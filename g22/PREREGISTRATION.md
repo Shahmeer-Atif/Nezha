@@ -153,4 +153,23 @@ layout runs and that audit lines are written. It is not one of the 22 runs and i
 
 ## Deviations
 
-None yet.
+1. **Interrupted batch.** The batch was started at 2026-11-17T19:13Z on commit `0175a9d`. After 12 of
+   the 22 jobs had finished (01 to 12, all with exit 0) it was stopped by hand at about
+   2026-11-18T02:52Z, because the laptop had to be closed. Jobs 13 (OnlineBoutique, B, k = 5) and 14
+   (TrainTicket, B, k = 1) were running and were cut off after 43 of 56 and 12 of 45 faults. Their
+   two claim folders and their partial output files (two empty stdout files, two time files) were
+   deleted, and nothing from them is used. The batch was restarted with the same script and commit at
+   2026-11-18T19:50Z. It kept the 12 finished jobs, repeated the setup step (alarm-list equivalence
+   for B at k = 1, 2, 4, 5 and the false-alarm probes, with the same outcomes), rebuilt both workers
+   from the pristine Drain files and ran jobs 13 to 22 from the start. `round2.log` therefore holds
+   two `ROUND2 START` lines, and start lines without exit lines for jobs 13 and 14 from the first
+   session. Reason: machine availability. No run configuration, analysis or criterion changed. Every
+   job starts from the pristine state and Q0 holds, so no effect on results is expected; wall times
+   differ between the sessions and are not compared (Section 6).
+2. **Analyses that were not pre-registered.** Three descriptive checks were added after the data were
+   seen and are labelled post hoc where they are reported: (a) for B at k = 3 on TrainTicket, the
+   alarm lists were inspected by date (alarms of `ts-train-service` in the construction minute and
+   in the fault windows, and the first candidate of each lost case); (b) the four round-1
+   reproduction logs were compared per case with the authors' shipped reference logs in `log/`;
+   (c) the values and thresholds of the alarms were listed for the OnlineBoutique cases that
+   Component C changes. They change no pre-registered analysis or criterion.

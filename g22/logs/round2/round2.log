@@ -1,0 +1,59 @@
+ROUND2 START 2026-11-17T19:13:31Z commit=0175a9d
+equivalence B k=1: IDENTICAL
+equivalence B k=2: IDENTICAL
+equivalence B k=4: IDENTICAL
+equivalence B k=5: IDENTICAL
+false-alarm probes written
+=== 01_hipster_service_baseline start 19:29:14Z on w1 ===
+=== 02_ts_service_baseline start 19:29:19Z on w2 ===
+    02_ts_service_baseline exit=0 duration=19m36s  @1/@3/@5: 86.666667 % 97.777778 % 97.777778 % 
+=== 03_hipster_service_A_ratio start 19:48:55Z on w2 ===
+    01_hipster_service_baseline exit=0 duration=74m52s  @1/@3/@5: 92.857143 % 96.428571 % 96.428571 % 
+=== 04_ts_service_A_ratio start 20:44:06Z on w1 ===
+    04_ts_service_A_ratio exit=0 duration=23m58s  @1/@3/@5: 86.666667 % 97.777778 % 97.777778 % 
+=== 05_hipster_service_AB_k3_ratio start 21:08:04Z on w1 ===
+    03_hipster_service_A_ratio exit=0 duration=80m40s  @1/@3/@5: 87.500000 % 91.071429 % 91.071429 % 
+=== 06_ts_service_AB_k3_ratio start 21:09:35Z on w2 ===
+    06_ts_service_AB_k3_ratio exit=0 duration=26m53s  @1/@3/@5: 37.777778 % 51.111111 % 91.111111 % 
+=== 07_ts_service_A start 21:36:28Z on w2 ===
+    07_ts_service_A exit=0 duration=28m56s  @1/@3/@5: 86.666667 % 97.777778 % 97.777778 % 
+=== 08_ts_service_B_k3 start 22:05:24Z on w2 ===
+    08_ts_service_B_k3 exit=0 duration=28m6s  @1/@3/@5: 37.777778 % 51.111111 % 91.111111 % 
+=== 09_ts_service_AB_k3 start 22:33:30Z on w2 ===
+    09_ts_service_AB_k3 exit=0 duration=29m16s  @1/@3/@5: 37.777778 % 51.111111 % 91.111111 % 
+=== 10_hipster_service_B_k1 start 23:02:46Z on w2 ===
+    05_hipster_service_AB_k3_ratio exit=0 duration=147m15s  @1/@3/@5: 91.071429 % 94.642857 % 94.642857 % 
+=== 11_hipster_service_B_k2 start 23:35:19Z on w1 ===
+    10_hipster_service_B_k1 exit=0 duration=117m57s  @1/@3/@5: 82.142857 % 89.285714 % 89.285714 % 
+=== 12_hipster_service_B_k4 start 01:00:43Z on w2 ===
+    11_hipster_service_B_k2 exit=0 duration=114m18s  @1/@3/@5: 83.928571 % 91.071429 % 91.071429 % 
+=== 13_hipster_service_B_k5 start 01:29:37Z on w1 ===
+    12_hipster_service_B_k4 exit=0 duration=102m55s  @1/@3/@5: 87.500000 % 91.071429 % 91.071429 % 
+=== 14_ts_service_B_k1 start 02:43:39Z on w2 ===
+ROUND2 START 2026-11-18T19:50:25Z commit=0175a9d
+equivalence B k=1: IDENTICAL
+equivalence B k=2: IDENTICAL
+equivalence B k=4: IDENTICAL
+equivalence B k=5: IDENTICAL
+false-alarm probes written
+=== 13_hipster_service_B_k5 start 20:03:02Z on w1 ===
+=== 14_ts_service_B_k1 start 20:03:07Z on w2 ===
+    14_ts_service_B_k1 exit=0 duration=20m46s  @1/@3/@5: 13.333333 % 37.777778 % 60.000000 % 
+=== 15_ts_service_B_k2 start 20:23:53Z on w2 ===
+    15_ts_service_B_k2 exit=0 duration=24m9s  @1/@3/@5: 4.444444 % 8.888889 % 68.888889 % 
+=== 16_ts_service_B_k4 start 20:48:02Z on w2 ===
+    16_ts_service_B_k4 exit=0 duration=21m45s  @1/@3/@5: 80.000000 % 97.777778 % 97.777778 % 
+=== 17_ts_service_B_k5 start 21:09:47Z on w2 ===
+    17_ts_service_B_k5 exit=0 duration=23m12s  @1/@3/@5: 80.000000 % 97.777778 % 97.777778 % 
+=== 18_hipster_service_A start 21:32:59Z on w2 ===
+    13_hipster_service_B_k5 exit=0 duration=106m21s  @1/@3/@5: 83.928571 % 87.500000 % 87.500000 % 
+=== 19_hipster_service_B_k3 start 21:49:23Z on w1 ===
+    18_hipster_service_A exit=0 duration=88m58s  @1/@3/@5: 92.857143 % 96.428571 % 96.428571 % 
+=== 20_hipster_service_AB_k3 start 23:01:57Z on w2 ===
+    19_hipster_service_B_k3 exit=0 duration=89m46s  @1/@3/@5: 91.071429 % 94.642857 % 94.642857 % 
+=== 21_ts_inner_baseline start 23:19:09Z on w1 ===
+    21_ts_inner_baseline exit=0 duration=22m24s  @1/@3/@5: 86.666667 % 97.777778 % 97.777778 % 
+=== 22_hipster_inner_baseline start 23:41:33Z on w1 ===
+    20_hipster_service_AB_k3 exit=0 duration=95m19s  @1/@3/@5: 91.071429 % 94.642857 % 94.642857 % 
+    22_hipster_inner_baseline exit=0 duration=71m55s  @1/@3/@5: 92.857143 % 96.428571 % 96.428571 % 
+ROUND2 DONE 2026-11-19T00:53:28Z
